@@ -1,15 +1,18 @@
 #include "robot_gui/robot_gui.h"
+#include "geometry_msgs/Twist.h"
 #include "robotinfo_msgs/RobotInfo10Fields.h"
 #include <ros/ros.h>
-#include <sstream>
-#include <string>
-#include <vector>
 
 RobotGUI::RobotGUI(ros::NodeHandle &nh) : nh_(nh) {
     robot_info_sub_ = nh_.subscribe("robot_info", 10, &RobotGUI::robotInfoCallBack, this);
+    twist_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10);
+
+    cv::namedWindow(WINDOW_NAME);
 };
 
-RobotGUI::~RobotGUI() {};
+RobotGUI::~RobotGUI() {
+    cv::destroyAllWindows();
+};
 
 void RobotGUI::runGraphicalInterface() {
     cvui::init(WINDOW_NAME);
@@ -23,15 +26,15 @@ void RobotGUI::runGraphicalInterface() {
 		// Fill the frame_ with a nice color
 		frame_ = cv::Scalar(49, 52, 49);
 
-		// Genearl Info Area 
-        drawGeneralInfoArea();
-        
-		cvui::update();
+        drawGeneralInfoArea(); // Genearl Info Area 
+        drawTeloperationButtons(); // Teleoperation Buttons
 
-		// Show everything on the screen
-		cv::imshow(WINDOW_NAME, frame_);
-
-		// Check if ESC key was pressed
+        twist_pub_.publish(twist_msg_); // Publishing the current twist message
+		
+        cvui::update(); // Update cvui
+		cv::imshow(WINDOW_NAME, frame_); // Show everything on the screen
+		
+        // Check if ESC key was pressed
 		if (cv::waitKey(20) == 27) {
 			break;
 		};
@@ -63,4 +66,42 @@ void RobotGUI::drawGeneralInfoArea() {
         cvui::text(frame_, 10, yOffset, infoline);
         yOffset += 20;
     };
+};
+
+bool RobotGUI::drawTeloperationButtons() {
+    // Display the robot Buttons 
+
+    // Move forward button and gray color
+    if (cvui::button(frame_, 105, 210, BOTTON_LENGTH, BOTTON_WIDTH, "Forward", scaling_*cvui::DEFAULT_FONT_SCALE, 0xb1b8b4)) {
+        linear_speed_ += 0.1;
+        twist_msg_.linear.x = linear_speed_;
+    };
+    
+    // Move backward button and gray color
+    if (cvui::button(frame_, 105, 340, BOTTON_LENGTH, BOTTON_WIDTH, "Backwards", scaling_*cvui::DEFAULT_FONT_SCALE, 0xb1b8b4)){
+        linear_speed_ -= 0.1;
+        twist_msg_.linear.x = linear_speed_;
+    };
+    
+    // Move right button and gray color
+    if (cvui::button(frame_, 200, 275, BOTTON_LENGTH, BOTTON_WIDTH, "Right", scaling_*cvui::DEFAULT_FONT_SCALE, 0xb1b8b4)) {
+        angular_speed_ -= 0.1;
+        twist_msg_.angular.z = angular_speed_;
+    };
+    
+    // Move left button and gray color
+    if (cvui::button(frame_, 10, 275, BOTTON_LENGTH, BOTTON_WIDTH, "Left", scaling_*cvui::DEFAULT_FONT_SCALE, 0xb1b8b4)) {
+        angular_speed_ += 0.1;
+        twist_msg_.angular.z = angular_speed_;
+    };
+
+    // Stop button and orange color
+    if (cvui::button(frame_, 105, 275, BOTTON_LENGTH, BOTTON_WIDTH, "Stop", scaling_*cvui::DEFAULT_FONT_SCALE, 0xffa950)) { 
+        linear_speed_ = 0.0;
+        angular_speed_ = 0.0;
+        twist_msg_.linear.x = linear_speed_;
+        twist_msg_.angular.z = angular_speed_;
+    };
+
+    return true;
 };
