@@ -2,6 +2,7 @@
 #include "geometry_msgs/Twist.h"
 #include "robotinfo_msgs/RobotInfo10Fields.h"
 #include <ros/ros.h>
+#include <string>
 
 RobotGUI::RobotGUI(ros::NodeHandle &nh) : nh_(nh) {
     robot_info_sub_ = nh_.subscribe("robot_info", 10, &RobotGUI::robotInfoCallBack, this);
@@ -11,7 +12,7 @@ RobotGUI::RobotGUI(ros::NodeHandle &nh) : nh_(nh) {
 };
 
 RobotGUI::~RobotGUI() {
-    cv::destroyAllWindows();
+
 };
 
 void RobotGUI::runGraphicalInterface() {
@@ -23,11 +24,11 @@ void RobotGUI::runGraphicalInterface() {
             currentScaling_ = scaling_;
         };
 
-		// Fill the frame_ with a nice color
-		frame_ = cv::Scalar(49, 52, 49);
+		frame_ = cv::Scalar(49, 52, 49); // Fill the frame with a background color
 
-        drawGeneralInfoArea(); // Genearl Info Area 
-        drawTeloperationButtons(); // Teleoperation Buttons
+        drawGeneralInfoArea();      // Genearl Info Area 
+        drawTeloperationButtons();  // Teleoperation Buttons
+        drawCurrentVelocities();    // Current Velocities 
 
         twist_pub_.publish(twist_msg_); // Publishing the current twist message
 		
@@ -104,4 +105,16 @@ bool RobotGUI::drawTeloperationButtons() {
     };
 
     return true;
+};
+
+void RobotGUI::drawCurrentVelocities() {
+    // Display the current velocity 
+    
+    // Linear velocity window
+    cvui::window(frame_, 10, 415, 140, 50, "Linear velocity: " );
+    cvui::text(frame_, 15, 445, std::to_string(linear_speed_) + " m/sec", scaling_*cvui::DEFAULT_FONT_SCALE, 0xffa950);
+    
+    // Angular velocity window
+    cvui::window(frame_, 150, 415, 140, 50, "Angular velocity: " );
+    cvui::text(frame_, 155, 445, std::to_string(angular_speed_) + " rad/sec", scaling_*cvui::DEFAULT_FONT_SCALE, 0xffa950);
 };
