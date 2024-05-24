@@ -1,5 +1,6 @@
 #include "robot_gui/robot_gui.h"
 #include "geometry_msgs/Twist.h"
+#include "nav_msgs/Odometry.h"
 #include "robotinfo_msgs/RobotInfo10Fields.h"
 #include <ros/ros.h>
 #include <string>
@@ -7,6 +8,8 @@
 RobotGUI::RobotGUI(ros::NodeHandle &nh) : nh_(nh) {
     robot_info_sub_ = nh_.subscribe("robot_info", 10, &RobotGUI::robotInfoCallBack, this);
     twist_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10);
+    odom_sub_ = nh_.subscribe("odom", 10, &RobotGUI::odomInfoCallBack, this);
+    
 
     cv::namedWindow(WINDOW_NAME);
 };
@@ -29,6 +32,7 @@ void RobotGUI::runGraphicalInterface() {
         drawGeneralInfoArea();      // Genearl Info Area 
         drawTeloperationButtons();  // Teleoperation Buttons
         drawCurrentVelocities();    // Current Velocities 
+        drawRobotPosition();        // Robot Position
 
         twist_pub_.publish(twist_msg_); // Publishing the current twist message
 		
@@ -41,7 +45,7 @@ void RobotGUI::runGraphicalInterface() {
 		};
 
         ros::spinOnce();
-        count++;
+        cv::waitKey(30);
 	}; 
 };
 
@@ -117,4 +121,29 @@ void RobotGUI::drawCurrentVelocities() {
     // Angular velocity window
     cvui::window(frame_, 150, 415, 140, 50, "Angular velocity: " );
     cvui::text(frame_, 155, 445, std::to_string(angular_speed_) + " rad/sec", scaling_*cvui::DEFAULT_FONT_SCALE, 0xffa950);
+};
+
+void RobotGUI::odomInfoCallBack(const nav_msgs::Odometry::ConstPtr &msg) {
+    // Display the robot position 
+    pos_odom_x = msg->pose.pose.position.x;
+    pos_odom_y = msg->pose.pose.position.y;
+    pos_odom_z = msg->pose.pose.position.z;
+};
+
+void RobotGUI::drawRobotPosition() {
+    // Display the robot position
+    cvui::text(frame_, 10, 480, "Estimated robot position based off odometry: ", 0.38);
+    
+    // X-axes window position 
+    cvui::window(frame_, 10, 500, 90, 90,  "     X");
+    cvui::printf(frame_, 22, 540, 0.9, 0xffffff, "%.1f", pos_odom_x);
+
+    // Y-axes window position 
+    cvui::window(frame_, 105, 500, 90, 90, "     Y");
+    cvui::printf(frame_, 117, 540, 0.9, 0xffffff, "%.1f", pos_odom_y);
+
+    // Z-axes window position 
+    cvui::window(frame_, 200, 500, 90, 90, "     Z");
+    cvui::printf(frame_, 212, 540, 0.9, 0xffffff, "%.1f", pos_odom_z);
+
 };
