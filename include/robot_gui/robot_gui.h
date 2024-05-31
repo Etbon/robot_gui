@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ros/service_client.h"
 #define CVUI_IMPLEMENTATION
 
 #include <ros/ros.h>
@@ -8,6 +9,7 @@
 #include <robotinfo_msgs/RobotInfo10Fields.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include "robot_gui/GetDistance.h"
 
 #include "robot_gui/cvui.h"
 
@@ -18,19 +20,20 @@ class RobotGUI {
     RobotGUI(ros::NodeHandle &nh); 
     ~RobotGUI();
     
-    void runGraphicalInterface();     // Function that runs the GUI
+    void runGraphicalInterface();       // Function that runs the GUI
 
   private:
     ros::NodeHandle nh_;
-    ros::Subscriber robot_info_sub_;  // Receives the robot information 
-    ros::Publisher twist_pub_;        // Publish the current message
-    ros::Subscriber odom_sub_;        // Recives the robot position 
+    ros::Subscriber robot_info_sub_;    // Receives the robot information 
+    ros::Publisher twist_pub_;          // Publish the current message
+    ros::Subscriber odom_sub_;          // Recives the robot position 
+    ros::ServiceClient service_client;  // Service client 
 
     geometry_msgs::Twist twist_msg_;
     nav_msgs::Odometry odom_msg_;
     
-    std::string robotInfoString;      // Stores the data that will be display in the window
-    std::string infoline;             // Element of the data
+    std::string robotInfoString;        // Stores the data that will be display in the window
+    std::string infoline;               // Element of the data
 
     cv::Mat frame_;
 
@@ -51,14 +54,17 @@ class RobotGUI {
     const int BOTTON_WIDTH {60};
 
     //Robot Position
-    float pos_odom_x {0};
-    float pos_odom_y {0};
-    float pos_odom_z {0};
+    double distance_travelled_ {0.0};
+    double current_position_x_ {0.0};
+    double current_position_y_ {0.0};
+    double current_position_z_ {0.0};
 
     void robotInfoCallBack(const robotinfo_msgs::RobotInfo10Fields::ConstPtr &msg);  // CallBack this will receive incoming messages
     void drawGeneralInfoArea();                                                      // Function of General Info Area
     bool drawTeloperationButtons();                                                  // Function of Teleopertion Buttons
     void drawCurrentVelocities();                                                    // Function of Current Velocities 
-    void odomInfoCallBack(const nav_msgs::Odometry::ConstPtr &msg);
-    void drawRobotPosition();
+    void odomInfoCallBack(const nav_msgs::Odometry::ConstPtr &msg);                  // Updates the robot position 
+    void drawRobotPosition();                                                        // Function of Robot Position 
+    void callDistanceService();                                                      // Call the service to calculate the distance
+    void drawDistanceTravelledService();                                             // Function of the Distance Travelled Service
 };
